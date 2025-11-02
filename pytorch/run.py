@@ -63,7 +63,7 @@ parser.add_argument('-t', '--train', action='store_true', help='to train.')
 parser.add_argument('-e', '--test',  action='store_true', help='to test')
 parser.add_argument('--val_interval', type=int, default=1,  help='(for hp tuning). Epoch interval to evaluate on validation data. set -1 for only after final epoch, or a number higher than the total epochs to not validate.')
 # data
-parser.add_argument('--data_dir', type=str, default='/path/to/dataset', help='path to dataset?')
+parser.add_argument('--data_dir', type=str, default='/mount/Data1/Davang/CholecT45/', help='path to dataset?')
 parser.add_argument('--dataset_variant', type=str, default='cholect45-crossval', choices=['cholect50', 'cholect45', 'cholect50-challenge', 'cholect50-crossval', 'cholect45-crossval'], help='Variant of the dataset to use')
 parser.add_argument('-k', '--kfold', type=int, default=1,  choices=[1,2,3,4,5,], help='The test split in k-fold cross-validation')
 parser.add_argument('--image_width', type=int, default=448, help='Image width ')  

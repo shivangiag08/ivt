@@ -149,8 +149,6 @@ class BaseModel(nn.Module):
     def forward(self, x):
         _ = self.basemodel(x)
         return self.output_feature['high_level_feature'], self.output_feature['low_level_feature']
-    
-
      
 #%% Weakly-Supervised localization
 class WSL(nn.Module):
@@ -170,7 +168,6 @@ class WSL(nn.Module):
         logits  = self.gmp(cam).squeeze(-1).squeeze(-1)
         return cam, logits
  
-
 #%% Unfiltered Bottleneck layer
 class Bottleneck(nn.Module):
     def __init__(self, num_class):
@@ -189,7 +186,6 @@ class Bottleneck(nn.Module):
         feature = self.bn2(feature)
         feature = self.elu(feature)
         return feature
-
 
 #%% Class Activation Guided Attention Mechanism
 class CAGAM(nn.Module):    
@@ -265,14 +261,22 @@ class CAGAM(nn.Module):
         e = self.bn12(e + z)
         cmap = self.target_cmap(e)
         y = self.gmp(cmap).squeeze(-1).squeeze(-1)
-        return cmap, y
+        return cmap, y, e
             
     def forward(self, x, cam):
-        cam_v, logit_v = self.get_verb(x, cam)
-        cam_t, logit_t = self.get_target(x, cam)
+        # 1. (I -> T): Get target's 15-channel CAM AND its 6-channel internal guide
+        cam_t, logit_t, target_guide = self.get_target(x, cam)
+        
+        # 2. (I + T): Combine the two 6-CHANNEL guides
+        #    'cam' is the 6-channel instrument guide
+        #    'target_guide' is the 6-channel target guide
+        combined_cam = cam * target_guide # Or try (cam + target_guide) if this fails
+        
+        # 3. ((I+T) -> V): Get verb using the new combined 6-channel guide
+        cam_v, logit_v = self.get_verb(x, combined_cam)
+        
         return (cam_v, logit_v), (cam_t, logit_t)
 
- 
 #%% Projection function
 class Projection(nn.Module):
     def __init__(self, num_tool=6, num_verb=10, num_target=15, num_triplet=100, out_depth=128):
@@ -314,7 +318,6 @@ class Projection(nn.Module):
         X  = self.elu(F.interpolate(X, (sh[2],sh[3])))
         return (X, (k1,v1), (k2,v2), (k3,v3), (q,k,v))
 
-
 #%% Multi-head of self and cross attention
 class MHMA(nn.Module):
     def __init__(self, depth, num_class=100, num_heads=4, use_ln=False):
@@ -349,7 +352,6 @@ class MHMA(nn.Module):
         mha   = self.ln(mha + X.clone())  
         return mha
 
- 
 #%% Feed-forward layer
 class FFN(nn.Module):
     def __init__(self, k, num_class=100, use_ln=False):
@@ -368,7 +370,6 @@ class FFN(nn.Module):
         x  = self.elu2(self.bn2(self.conv2(x)))
         x  = self.ln(x + inputs.clone())
         return x
-
  
 #%% Classification layer
 class Classifier(nn.Module):
